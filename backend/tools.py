@@ -1,6 +1,4 @@
 import json
-import random
-
 
 async def lookup_ip_reputation(ip_address: str) -> str:
     print(f"[TOOL] lookup_ip_reputation called → {ip_address}")
@@ -17,7 +15,6 @@ async def lookup_ip_reputation(ip_address: str) -> str:
         "country": "CN" if is_malicious else "SG",
     }
     return json.dumps(result)
-
 
 async def search_system_logs(query: str, hours: int = 24) -> str:
     print(f"[TOOL] search_system_logs called → {query}")
@@ -41,7 +38,6 @@ async def search_system_logs(query: str, hours: int = 24) -> str:
         }
     ]
     return json.dumps(logs)
-
 
 async def get_asset_details(ip_address: str) -> str:
     print(f"[TOOL] get_asset_details called → {ip_address}")

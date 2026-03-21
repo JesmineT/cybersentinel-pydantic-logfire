@@ -5,7 +5,6 @@ import random
 
 server = FastMCP("cybersentinel-tools")
 
-
 @server.tool()
 def get_threat_feed(days: int = 7) -> str:
     print(f"[MCP] get_threat_feed called -> {days} days")
@@ -84,7 +83,6 @@ def get_user_activity(username: str) -> str:
         "note": "Encoded PowerShell and domain enumeration commands are suspicious"
     }
     return json.dumps(activity, indent=2)
-
 
 if __name__ == "__main__":
     server.run()

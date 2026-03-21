@@ -10,11 +10,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-
 from models import ThreatReport, AgentResponse
 from tools import lookup_ip_reputation, search_system_logs, get_asset_details
 
-# ── Model ──────────────────────────────────
+# Model
 model = OpenAIModel(
     "gpt-4o-mini",                    
     provider=OpenAIProvider(
@@ -22,18 +21,9 @@ model = OpenAIModel(
     )
 )
 
-# (vLLM)
-# model = OpenAIModel(
-#     "Qwen2.5-7B-Instruct",        # given
-#     provider=OpenAIProvider(
-#         base_url="http://localhost:8000/v1",  # given
-#         api_key="not-needed",
-#     )
-# )
-
 mcp = MCPServerStdio("python", args=["mcp_server.py"])
 
-# ── Agent ──────────────────────────────────
+# Agent
 agent = Agent(
     model,
     output_type=AgentResponse,
@@ -43,9 +33,9 @@ agent = Agent(
     - lookup_ip_reputation: check if an IP is malicious
     - search_system_logs: search SIEM/EDR logs
     - get_asset_details: look up device info by IP
-    - get_threat_feed (MCP): check active threat campaigns  ← new
-    - search_firewall_logs (MCP): raw firewall log search   ← new
-    - get_user_activity (MCP): investigate a user account   ← new
+    - get_threat_feed (MCP): check active threat campaigns  
+    - search_firewall_logs (MCP): raw firewall log search   
+    - get_user_activity (MCP): investigate a user account   
 
     When the user describes a NEW threat or incident:
     - Set is_new_investigation=True
@@ -61,16 +51,15 @@ agent = Agent(
     - Answer concisely from conversation context
     - Only call tools if genuinely new information is needed""",
 
-    instrument=True,
+    instrument=True, # important to add this 
 )
 
-# Register tools
+# Register direct/internal tools from tools.py
 agent.tool_plain(lookup_ip_reputation)
 agent.tool_plain(search_system_logs)
 agent.tool_plain(get_asset_details)
 
-
-# ── Session store with expiry after 1 hour ──────────────────────────
+# Session store with expiry after 1 hour 
 class SessionStore:
     def __init__(self):
         self._store = {}
@@ -92,12 +81,11 @@ class SessionStore:
 
 store = SessionStore()
 
-
-# ── Main run function ──────────────────────
+# Main run function
 async def run_triage(message: str, session_id: str) -> dict:
     history = store.get(session_id)
 
-    # ── Drift check BEFORE running the agent ──
+    # Drift check before running the agent
     drift_detected = _check_input_drift(message)
     if drift_detected:
         logfire.warn(
@@ -116,7 +104,7 @@ async def run_triage(message: str, session_id: str) -> dict:
 
             store.save(session_id, result.all_messages())
 
-            # ── Artifact Logging ──────────────────
+            # Artifact Logging 
             # Save every report as a JSON file for audit trail
             if result.output.report:
                 artifact = {
@@ -134,20 +122,20 @@ async def run_triage(message: str, session_id: str) -> dict:
                 with open(filename, "w") as f:
                     json.dump(artifact, f, indent=2)
 
-                # Also log to Logfire so it appears in the dashboard
-                # logfire.info(
-                #     "artifact_saved",
-                #     incident_id=artifact["report"]["incident_id"],
-                #     severity=artifact["report"]["severity"],
-                #     filename=filename,
-                # )
+                # Also log to Logfire so it appears in the browser dashboard
+                logfire.info(
+                    "artifact_saved",
+                    incident_id=artifact["report"]["incident_id"],
+                    severity=artifact["report"]["severity"],
+                    filename=filename,
+                )
 
                 logfire.configure(
                     service_name="cybersentinel",
                     send_to_logfire=False,        # don't send to cloud
                     trace_sample_rate=1.0,
                 )
-            # ── End Artifact Logging ──────────────
+            # End of artifact logging
 
             logfire.info(
                 "triage_complete",
@@ -170,6 +158,9 @@ SECURITY_KEYWORDS = [
     "ransomware", "phishing", "backdoor", "c2", "command",
 ]
 
+# Rule-based / heuristic detection.
+# In production, statistical drift detection would use embedding distance.
+# Adversarial input defense would layer canonicalization and input smoothing.
 def _check_input_drift(query: str) -> bool:
     """
     Lightweight input distribution check.
