@@ -44,17 +44,10 @@ npm run dev
 
 ## 7. Verify everything works
 - http://localhost:8000/docs -> FastAPI docs
-- http://localhost:8000/health → {"status":"ok"}
-- http://localhost:5173 → React page loads
-- Send a message → ThreatReport returned
-
-## 8. vLLM swap, just change .env
-```
-MODEL_NAME=whatever-they-say
-MODEL_BASE_URL=http://their-url/v1
-MODEL_API_KEY=not-needed
-```
-
+- http://localhost:8000/health -> {"status":"ok"}
+- http://localhost:5173 -> React page loads
+- Send a message -> ThreatReport returned
+  
 ---
 
 ## Tools
