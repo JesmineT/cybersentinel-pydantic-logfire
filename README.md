@@ -1,4 +1,4 @@
-# CyberSentinel 
+# Cybersentinel assessment day quick start
 
 ## 1. Create folders
 ```bash
