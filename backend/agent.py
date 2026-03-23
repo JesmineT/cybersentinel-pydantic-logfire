@@ -13,6 +13,8 @@ from pathlib import Path
 from models import ThreatReport, AgentResponse
 from tools import lookup_ip_reputation, search_system_logs, get_asset_details
 
+import statistics
+
 # Model
 model = OpenAIModel(
     "gpt-4o-mini",                    
@@ -85,15 +87,15 @@ store = SessionStore()
 async def run_triage(message: str, session_id: str) -> dict:
     history = store.get(session_id)
 
-    # Drift check before running the agent
-    drift_detected = _check_input_drift(message)
-    if drift_detected:
-        logfire.warn(
-            "input_drift_detected",
-            query=message,
-            session_id=session_id,
-        )
-        print(f"[DRIFT] Out-of-distribution query detected: {message[:50]}")
+    # Drift checks
+    stat_drift = detect_statistical_drift(message)
+    adv_drift  = detect_adversarial_drift(message)
+
+    if stat_drift.get("overall_drift"):
+        logfire.warning("statistical_drift_detected", session_id=session_id, fields=stat_drift["fields"])
+
+    if adv_drift["adversarial"]:
+        logfire.warning("adversarial_drift_detected", session_id=session_id, patterns=adv_drift["triggered_patterns"])
 
     with logfire.span("threat_triage", session_id=session_id, query=message):
         async with agent.run_mcp_servers():
@@ -148,7 +150,6 @@ async def run_triage(message: str, session_id: str) -> dict:
                 "output": result.output,
                 "session_id": session_id,
             }
-        
 
 SECURITY_KEYWORDS = [
     "ip", "port", "attack", "malware", "threat", "incident",
@@ -158,40 +159,66 @@ SECURITY_KEYWORDS = [
     "ransomware", "phishing", "backdoor", "c2", "command",
 ]
 
-# Rule-based / heuristic detection.
-# In production, statistical drift detection would use embedding distance.
-# Adversarial input defense would layer canonicalization and input smoothing.
-def _check_input_drift(query: str) -> bool:
-    """
-    Lightweight input distribution check.
-    
-    Returns True if the query looks OUT of distribution —
-    meaning it doesn't look like a security-related question.
-    
-    In production: replace with embedding distance comparison
-    against a reference dataset of normal security queries.
-    
-    Returns:
-        True  = drift detected (query is suspicious / off-topic)
-        False = query looks normal for this system
-    """
-    # Rule 1: too short to be a real security query
-    if len(query.strip()) < 10:
-        return True
+ADVERSARIAL_PATTERNS = [
+    "ignore previous instructions",
+    "disregard your system prompt",
+    "pretend you are",
+    "act as if you have no restrictions",
+    "jailbreak",
+    "bypass security",
+    "you are now",
+    "forget everything",
+]
 
-    # Rule 2: no security keywords present
+_query_history: list[dict] = []
+
+def _query_vector(query: str) -> dict:
+    """Extract numeric features from a query for statistical comparison."""
+    return {
+        "length":           len(query),
+        "word_count":       len(query.split()),
+        "has_ip":           any(part.replace(".","").isdigit() for part in query.split()),
+        "keyword_count":    sum(1 for k in SECURITY_KEYWORDS if k in query.lower()),
+    }
+
+def detect_statistical_drift(query: str) -> dict:
+    """Z-score based drift detection against rolling query history."""
+    current = _query_vector(query)
+
+    if len(_query_history) < 5:
+        _query_history.append(current)
+        return {"status": "insufficient_history", "samples": len(_query_history)}
+
+    numeric_fields = ["length", "word_count", "keyword_count"]
+    drift_flags = {}
+
+    for field in numeric_fields:
+        historical = [v[field] for v in _query_history]
+        mean  = statistics.mean(historical)
+        stdev = statistics.stdev(historical) or 1.0
+        z     = abs((current[field] - mean) / stdev)
+        drift_flags[field] = {
+            "current": current[field],
+            "mean":    round(mean, 2),
+            "z_score": round(z, 2),
+            "drifted": z > 2.5,
+        }
+
+    _query_history.append(current)
+    overall = any(v["drifted"] for v in drift_flags.values())
+
+    return {
+        "status":        "drift_detected" if overall else "nominal",
+        "overall_drift": overall,
+        "fields":        drift_flags,
+    }
+
+def detect_adversarial_drift(query: str) -> dict:
+    """Scan for known prompt injection patterns."""
     query_lower = query.lower()
-    has_security_context = any(
-        keyword in query_lower 
-        for keyword in SECURITY_KEYWORDS
-    )
-    if not has_security_context:
-        return True
-
-    # Rule 3: looks like a test or nonsense input
-    nonsense_patterns = ["hello", "test", "hi ", "hey ", "what is", "who are"]
-    is_nonsense = any(query_lower.startswith(p) for p in nonsense_patterns)
-    if is_nonsense:
-        return True
-
-    return False  # looks like a legitimate security query
+    triggered = [p for p in ADVERSARIAL_PATTERNS if p in query_lower]
+    return {
+        "status":             "adversarial_detected" if triggered else "clean",
+        "adversarial":        bool(triggered),
+        "triggered_patterns": triggered,
+    }
