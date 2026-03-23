@@ -87,9 +87,6 @@ is 192.168.1.105 malicious?
 ```
 search logs for powershell activity in the last 24 hours
 ```
-```
-any suspicious outbound connections from 192.168.1.105?
-```
 
 ---
 
@@ -132,7 +129,7 @@ investigate user john.doe for suspicious activity
 ```
 what has john.doe been doing on the network?
 ```
-> Returns encoded PowerShell commands, domain enumeration, 3 failed logins, 450MB data accessed.
+> Returns encoded PowerShell commands, domain enumeration, multiple failed logins and significant data accessed.
 
 ---
 
@@ -140,16 +137,16 @@ what has john.doe been doing on the network?
 ```
 we have a suspicious outbound connection from 192.168.1.105 to port 4444, investigate immediately
 ```
-> SENTINEL will call `lookup_ip_reputation` → `search_system_logs` → `get_threat_feed` → `get_asset_details` in sequence and return a full ThreatReport.
+> SENTINEL will call `lookup_ip_reputation` → `search_system_logs` → `search_firewall_logs` → `get_asset_details` in sequence and return a full ThreatReport.
 
 ---
 
-### Follow-up question (no tools fired)
+### Follow-up question to test for context management (no tools fired)
 After the investigation above, send:
 ```
 what was the patch status of that device?
 ```
-> SENTINEL answers from session context without calling any tools. `is_new_investigation` returns `false`.
+> Agent answers from session context without calling any tools. `is_new_investigation` returns `false`.
 
 ---
 
