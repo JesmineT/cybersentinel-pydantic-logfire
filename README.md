@@ -1,12 +1,12 @@
-# CyberSentinel — Assessment Day Quick Start
+# CyberSentinel 
 
-## 1. Create folders (30 seconds)
+## 1. Create folders
 ```bash
 mkdir projectname && cd projectname
 mkdir backend frontend
 ```
 
-## 2. Backend setup (2 minutes)
+## 2. Backend setup
 ```bash
 cd backend
 python -m venv venv
@@ -34,7 +34,7 @@ MODEL_API_KEY=not-needed
 uvicorn main:app --reload --port 8000
 ```
 
-## 6. Frontend setup (2 minutes)
+## 6. Frontend setup
 ```bash
 cd ../frontend
 npm create vite@latest . -- --template react
