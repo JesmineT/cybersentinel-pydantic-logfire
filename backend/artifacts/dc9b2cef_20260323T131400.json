@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-03-23T13:14:00.769665",
+  "session_id": "dc9b2cef-5efc-4ca8-b1cd-5c9252f065df",
+  "query": "investigate ip address 192.168.1.105",
+  "answer": "Investigated IP 192.168.1.105; found blocked outbound connections and suspicious processes.",
+  "report": {
+    "incident_id": "INC-2026-03-20-001",
+    "severity": "HIGH",
+    "summary": "Suspicious activities detected from IP 192.168.1.105 including blocked outbound connections to port 4444 and a suspicious PowerShell process.",
+    "affected_assets": [
+      "WORKSTATION-07"
+    ],
+    "iocs": [
+      {
+        "type": "IP",
+        "value": "192.168.1.105",
+        "context": "Investigation IP"
+      }
+    ],
+    "recommended_actions": [
+      "Analyze further for potential compromise.",
+      "Isolate asset from the network until investigation is complete.",
+      "Monitor for unusual behavior related to user joh.doe@company.sg."
+    ],
+    "escalate_to_human": true,
+    "analyst_notes": "The IP associated with user john.doe@company.sg shows low external risk but has raised alarms internally."
+  },
+  "tokens_used": 2821,
+  "model": "gpt-4o-mini",
+  "drift": {
+    "statistical": {
+      "status": "insufficient_history",
+      "samples": 2
+    },
+    "adversarial": {
+      "status": "clean",
+      "adversarial": false,
+      "triggered_patterns": []
+    }
+  }
+}

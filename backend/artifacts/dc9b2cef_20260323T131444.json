@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-03-23T13:14:44.523390",
+  "session_id": "dc9b2cef-5efc-4ca8-b1cd-5c9252f065df",
+  "query": "give me an extremely detailed and exhaustive analysis of every single possible threat vector, attack surface, vulnerability, CVE, malware family, lateral movement technique, persistence mechanism, and recommended remediation action for every asset in our entire network infrastructure",
+  "answer": "Performing an exhaustive analysis of all threats across the network infrastructure is beyond immediate capabilities; please specify particular assets or areas for detailed investigation.",
+  "report": null,
+  "tokens_used": 3447,
+  "model": "gpt-4o-mini",
+  "drift": {
+    "statistical": {
+      "status": "drift_detected",
+      "overall_drift": true,
+      "fields": {
+        "length": {
+          "current": 284,
+          "mean": 32.67,
+          "z_score": 13.75,
+          "drifted": true
+        },
+        "word_count": {
+          "current": 37,
+          "mean": 4.67,
+          "z_score": 10.29,
+          "drifted": true
+        },
+        "keyword_count": {
+          "current": 5,
+          "mean": 0.83,
+          "z_score": 5.54,
+          "drifted": true
+        }
+      }
+    },
+    "adversarial": {
+      "status": "clean",
+      "adversarial": false,
+      "triggered_patterns": []
+    }
+  }
+}
